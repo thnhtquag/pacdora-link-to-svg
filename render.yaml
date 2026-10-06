@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: pacdora-link-to-svg
+    runtime: docker
+    plan: free
+    autoDeployTrigger: commit
+    healthCheckPath: /api/health

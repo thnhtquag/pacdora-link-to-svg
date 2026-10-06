@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pacdora Link → SVG mm</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">DIELINE TOOL</div>
+        <h1>Pacdora Link → SVG <span>mm</span></h1>
+        <p>Dán link Pacdora, chỉnh đúng phần <b>Custom size</b>, rồi xuất SVG vector sạch theo mm.</p>
+      </div>
+      <div class="pill">v2 · Browser automation</div>
+    </header>
+
+    <section class="card import-card">
+      <div class="section-title">1. Pacdora URL</div>
+      <div class="url-row">
+        <input id="url" type="url" placeholder="https://www.pacdora.com/dielines-detail/...">
+        <button id="importBtn" class="primary">Import</button>
+      </div>
+      <div id="importStatus" class="status">Chưa import link.</div>
+    </section>
+
+    <div class="workspace">
+      <section class="card">
+        <div class="section-title">2. Custom size</div>
+        <div id="fieldsEmpty" class="empty-box">Sau khi Import, các thông số của template sẽ xuất hiện ở đây.</div>
+        <div id="fields" class="fields"></div>
+
+        <div class="mini-title">Export options</div>
+        <div class="options">
+          <label class="option"><span>Include bleed</span><input id="includeBleed" type="checkbox" checked></label>
+          <label class="option"><span>Normalize lines</span><input id="normalizeLines" type="checkbox" checked></label>
+          <label class="option"><span>Artboard padding</span><div><input id="paddingMm" type="number" min="0" step="0.5" value="0"><small> mm</small></div></label>
+        </div>
+
+        <button id="generateBtn" class="primary wide" disabled>Generate SVG</button>
+        <div id="generateStatus" class="status">Chưa generate.</div>
+      </section>
+
+      <section class="card preview-card">
+        <div class="topline">
+          <div class="section-title">3. Preview</div>
+          <div id="sizeBadge" class="size-badge">—</div>
+        </div>
+        <div class="preview-stage">
+          <div id="previewEmpty" class="preview-empty">SVG preview</div>
+          <div id="previewHost"></div>
+        </div>
+        <div class="legend">
+          <span><i class="bleed"></i>Bleed</span><span><i class="cut"></i>Cut</span><span><i class="fold"></i>Fold</span>
+        </div>
+        <button id="downloadBtn" class="secondary wide" disabled>Download SVG</button>
+      </section>
+    </div>
+
+    <footer>
+      Tool chỉ đọc phần Custom size và linework dieline. Material, thickness, Advanced, Models và watermark không được đưa vào SVG đầu ra.
+    </footer>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>
