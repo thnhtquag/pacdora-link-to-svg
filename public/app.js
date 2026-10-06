@@ -11,8 +11,19 @@ function status(el,msg,type=''){ el.className='status'+(type?' '+type:''); el.te
 function busy(btn,on,label){ if(on){ btn.dataset.old=btn.textContent; btn.textContent=label; btn.disabled=true; } else { btn.textContent=btn.dataset.old||btn.textContent; btn.disabled=false; } }
 
 async function api(path,body){
-  const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const j=await r.json().catch(()=>({ok:false,error:'Server trả dữ liệu không hợp lệ.'}));
+  let r;
+  try {
+    r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  } catch(e) {
+    throw new Error('Không kết nối được server. Render có thể đang restart/sleep; chờ vài giây rồi thử lại.');
+  }
+  const raw=await r.text();
+  let j;
+  try { j=JSON.parse(raw); }
+  catch {
+    if ([502,503,504].includes(r.status)) throw new Error(`Render/Chromium vừa bị restart hoặc quá tải (HTTP ${r.status}). Hãy Import lại link rồi Generate lại.`);
+    throw new Error(`Server trả dữ liệu không hợp lệ (HTTP ${r.status}).`);
+  }
   if(!r.ok||!j.ok) throw new Error(j.error||`HTTP ${r.status}`);
   return j;
 }
@@ -38,13 +49,14 @@ async function doImport(){
   const url=els.url.value.trim();
   if(!url) return status(els.importStatus,'Hãy dán link Pacdora.','err');
   if(state.sessionId) api('/api/close',{sessionId:state.sessionId}).catch(()=>{});
-  busy(els.importBtn,true,'Opening…'); status(els.importStatus,'Đang mở Pacdora bằng browser ẩn…');
+  busy(els.importBtn,true,'Opening…'); status(els.importStatus,'Đang mở Pacdora và chỉ chờ phần Custom size…');
   els.generateBtn.disabled=true; els.downloadBtn.disabled=true; state.svgText='';
   try{
     const j=await api('/api/import',{url});
     state.sessionId=j.sessionId; state.url=j.url; state.fields=j.controls;
     renderFields(j.controls); els.generateBtn.disabled=false;
-    status(els.importStatus,`Đã tìm thấy ${j.controls.length} thông số Custom size${j.foundCustomSizeHeading?'':' (fallback detection)'}.`,'ok');
+    const t=Number.isFinite(j.timingMs)?` · ${(j.timingMs/1000).toFixed(1)}s`:'';
+    status(els.importStatus,`Đã tìm thấy ${j.controls.length} thông số Custom size${j.foundCustomSizeHeading?'':' (fallback detection)'}${t}.`,'ok');
   }catch(e){ status(els.importStatus,e.message,'err'); state.sessionId=null; }
   finally{ busy(els.importBtn,false); }
 }
@@ -60,8 +72,12 @@ async function doGenerate(){
     els.previewHost.innerHTML=j.svg; els.previewEmpty.style.display='none';
     els.sizeBadge.textContent=`${j.widthMm.toFixed(2)} × ${j.heightMm.toFixed(2)} mm`;
     els.downloadBtn.disabled=false;
-    status(els.generateStatus,`Xong · ${j.counts.cut} cut · ${j.counts.fold} fold · ${j.counts.bleed} bleed · ${j.unitsPerMm.toFixed(4)} unit/mm`,'ok');
-  }catch(e){ status(els.generateStatus,e.message,'err'); }
+    const t=Number.isFinite(j.timingMs)?` · ${(j.timingMs/1000).toFixed(1)}s`:'';
+    status(els.generateStatus,`Xong${t} · ${j.counts.cut} cut · ${j.counts.fold} fold · ${j.counts.bleed} bleed · ${j.unitsPerMm.toFixed(4)} unit/mm`,'ok');
+  }catch(e){
+    status(els.generateStatus,e.message,'err');
+    if(/restart|quá tải|hết hạn|Import lại/i.test(e.message)) state.sessionId=null;
+  }
   finally{ busy(els.generateBtn,false); if(state.sessionId) els.generateBtn.disabled=false; }
 }
 
